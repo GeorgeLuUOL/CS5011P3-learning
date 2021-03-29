@@ -103,8 +103,8 @@ public class Main {
        Task1 task1=new Task1();
        task1.buildSchema();
        task1.setNetwork();
-       //task1.training();
+       task1.training();
        task1.evaluation();
-        task1.predict();
+       task1.predict();
     }
 }

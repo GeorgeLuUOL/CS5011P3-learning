@@ -29,6 +29,7 @@ import org.nd4j.linalg.lossfunctions.impl.LossMCXENT;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -143,7 +144,7 @@ public class Task1 {
             INDArray predicted = model.output(features, false);
 
             sb.append(predicted.toStringFull());
-            //System.out.println(predicted.toStringFull());
+            System.out.println(predicted.toStringFull());
             //System.out.println(labels.toStringFull());
 
             eval.eval(labels, predicted);
@@ -179,21 +180,45 @@ public class Task1 {
                 .build();
         Schema finalSchema = transformProcess.getFinalSchema();
 
+
         FileSplit inputSplit = new FileSplit(new File("task1_test_nolabels.csv"));
+        CSVRecordReader raw = new CSVRecordReader(nLinesToSkip);
+        raw.initialize(inputSplit);
+        RecordReaderDataSetIterator rawIterator =
+                new RecordReaderDataSetIterator.Builder(raw, batchSize)
+                        .build();
+
+
+        List<Double> idSet = new ArrayList<>();
+        List<double[][]> recordSet = new ArrayList<>();
+        double[][] record;
+        while (rawIterator.hasNext()) {
+            DataSet t = rawIterator.next();
+            record = t.getFeatures().toDoubleMatrix();
+            recordSet.add(record);
+            //System.out.println(t.getFeatures().toStringFull());
+        }
+        for (double[][] matrix : recordSet) {
+            for (double[] r : matrix) {
+                idSet.add(r[0]);
+            }
+        }
+
 
         TransformProcessRecordReader predictRecordReader =
                 new TransformProcessRecordReader(
                         new CSVRecordReader(nLinesToSkip, ','), transformProcess);
         predictRecordReader.initialize(inputSplit);
 
-        predictRecordReader.initialize(new FileSplit(new File("task1_test_nolabels.csv")));
+
         RecordReaderDataSetIterator testIterator =
                 new RecordReaderDataSetIterator.Builder(predictRecordReader, batchSize)
                         .build();
 
         //schema for predicting
 
-
+        List<double[][]> resultList = new ArrayList<>();
+        double[][] result;
         while (testIterator.hasNext()) {
 
             DataSet t = testIterator.next();
@@ -201,7 +226,19 @@ public class Task1 {
             INDArray features = t.getFeatures();
             //System.out.println(features.toStringFull());
             INDArray predicted = model.output(features, false);
-            System.out.println(predicted.toStringFull());
+            result = predicted.toDoubleMatrix();
+            resultList.add(result);
+            //System.out.println(predicted.toStringFull());
+        }
+        System.out.println("id required for repairing");
+        int index = 0;
+        for (double[][] matrix : resultList) {
+            for (double[] r : matrix) {
+                if (r[0] < 0.5) {
+                    System.out.println(Math.round(idSet.get(index)));
+                }
+                index++;
+            }
         }
     }
 }
