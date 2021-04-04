@@ -7,6 +7,7 @@ import org.datavec.api.transform.schema.Schema;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 
 public class CategoryMaker {
@@ -20,20 +21,34 @@ public class CategoryMaker {
     public CategoryMaker(Schema schema) {
         this.schema = schema;
     }
-    public TransformProcess.Builder buildCatagory(ArrayList<List<String>> category){
+    public TransformProcess.Builder buildCatagory(ArrayList<List<String>> category, HashSet<String> DropLebel){
         TransformProcess.Builder transformProcess=new TransformProcess.Builder(schema);
         int size=schema.numColumns();
         for (int i = 0; i < size; i++){
             String type=schema.getColumnTypes().get(i).toString();
             String name=schema.getColumnNames().get(i);
-            if(type.equals("String")){
+            if(type.equals("String")&&!DropLebel.contains(name)){
                 transformProcess.stringToCategorical(name,category.get(i));
-                //transformProcess.categoricalToOneHot(name);
+                transformProcess.categoricalToOneHot(name);
             }
-           
+
         }
         return transformProcess;
     }
+    public TransformProcess.Builder toOneHotAll(TransformProcess.Builder builder,String label){
+        int size=schema.numColumns();
+        for (int i = 0; i < size; i++){
+            String type=schema.getColumnTypes().get(i).toString();
+            String name=schema.getColumnNames().get(i);
+            System.out.println(type+"  "+name);
+            if(type.equals("String")&&name!=label){
+                builder.categoricalToOneHot(name);
+            }
+
+        }
+        return builder;
+    }
+
 
     public ArrayList<List<String>> makeList(CSVRecordReader reader) {
         int size = this.schema.numColumns();
