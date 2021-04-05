@@ -118,44 +118,45 @@ public class Task1 {
                         new CSVRecordReader(nLinesToSkip, ','), transformProcess);
         testRecordReader.initialize(new FileSplit(new File("task1_test.csv")));
         RecordReaderDataSetIterator testIterator =
-                new RecordReaderDataSetIterator.Builder(testRecordReader, batchSize)
+                new RecordReaderDataSetIterator.Builder(testRecordReader, 1)
                         .classification(schema.getIndexOfColumn("status_group"), 2)
                         .build();
 
-// evaluate the trained model on the pre-processed test set
-        //Evaluation eval = model.evaluate(testIterator);
         Evaluation eval = new Evaluation(2);
-
         File modelSave = new File("task1_train-model.bin");
-        DataAnalysis analysis =
-                DataAnalysis.fromJson(ModelSerializer.getObjectFromFile(
-                        modelSave, "dataanalysis"));
-        MultiLayerNetwork model = ModelSerializer.restoreMultiLayerNetwork(modelSave);
-        Schema schema = Schema.fromJson(ModelSerializer.getObjectFromFile(
-                modelSave, "schema"));
 
+        MultiLayerNetwork model = ModelSerializer.restoreMultiLayerNetwork(modelSave);
+        FileSplit inputSplit = new FileSplit(new File("task1_test.csv"));
+
+        CategoryMaker cm = new CategoryMaker(schema);
+        int count = 0;
+        CSVRecordReader reader = new CSVRecordReader(nLinesToSkip, ',');
+        reader.initialize(inputSplit);
+        ArrayList<Object[]> list = cm.getListFromCSV(reader);
         System.out.println("predict result:");
         StringBuilder sb = new StringBuilder();
+
         while (testIterator.hasNext()) {
             DataSet t = testIterator.next();
             //System.out.println(t.toString());
             INDArray features = t.getFeatures();
             INDArray labels = t.getLabels();
             INDArray predicted = model.output(features, false);
-
+            if (count < list.size()) {
+                sb.append(cm.toStringInRow(list, count));
+            }
             sb.append(predicted.toStringFull());
-            System.out.println(predicted.toStringFull());
+            sb.append("\n");
             //System.out.println(labels.toStringFull());
 
             eval.eval(labels, predicted);
+            count++;
         }
         System.out.println(sb.toString());
         TextWriter.saveAsFileWriter(sb.toString());
 
 
-// print accuracy
-        //System.out.println("Accuracy: " + eval.accuracy());
-        System.out.println(eval.stats());
+
     }
 
     public void predict() throws IOException, InterruptedException {

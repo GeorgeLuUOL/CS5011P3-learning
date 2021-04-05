@@ -21,27 +21,29 @@ public class CategoryMaker {
     public CategoryMaker(Schema schema) {
         this.schema = schema;
     }
-    public TransformProcess.Builder buildCatagory(ArrayList<List<String>> category, HashSet<String> DropLebel){
-        TransformProcess.Builder transformProcess=new TransformProcess.Builder(schema);
-        int size=schema.numColumns();
-        for (int i = 0; i < size; i++){
-            String type=schema.getColumnTypes().get(i).toString();
-            String name=schema.getColumnNames().get(i);
-            if(type.equals("String")&&!DropLebel.contains(name)){
-                transformProcess.stringToCategorical(name,category.get(i));
+
+    public TransformProcess.Builder buildCatagory(ArrayList<List<String>> category, HashSet<String> DropLebel) {
+        TransformProcess.Builder transformProcess = new TransformProcess.Builder(schema);
+        int size = schema.numColumns();
+        for (int i = 0; i < size; i++) {
+            String type = schema.getColumnTypes().get(i).toString();
+            String name = schema.getColumnNames().get(i);
+            if (type.equals("String") && !DropLebel.contains(name)) {
+                transformProcess.stringToCategorical(name, category.get(i));
                 transformProcess.categoricalToOneHot(name);
             }
 
         }
         return transformProcess;
     }
-    public TransformProcess.Builder toOneHotAll(TransformProcess.Builder builder,String label){
-        int size=schema.numColumns();
-        for (int i = 0; i < size; i++){
-            String type=schema.getColumnTypes().get(i).toString();
-            String name=schema.getColumnNames().get(i);
-            System.out.println(type+"  "+name);
-            if(type.equals("String")&&name!=label){
+
+    public TransformProcess.Builder toOneHotAll(TransformProcess.Builder builder, String label) {
+        int size = schema.numColumns();
+        for (int i = 0; i < size; i++) {
+            String type = schema.getColumnTypes().get(i).toString();
+            String name = schema.getColumnNames().get(i);
+            System.out.println(type + "  " + name);
+            if (type.equals("String") && name != label) {
                 builder.categoricalToOneHot(name);
             }
 
@@ -49,6 +51,24 @@ public class CategoryMaker {
         return builder;
     }
 
+
+    public ArrayList<Object[]> getListFromCSV(CSVRecordReader reader) {
+
+        ArrayList<Object[]> list = new ArrayList<>();
+        while(reader.hasNext()){
+            list.add(reader.next().toArray());
+        }
+        return list;
+    }
+
+    public String toStringInRow(ArrayList<Object[]> list, int row) {
+        StringBuilder sb = new StringBuilder();
+        Object[] objList=list.get(row);
+        for(Object o:objList){
+            sb.append(o.toString()+"  ");
+        }
+        return sb.toString();
+    }
 
     public ArrayList<List<String>> makeList(CSVRecordReader reader) {
         int size = this.schema.numColumns();
@@ -66,12 +86,12 @@ public class CategoryMaker {
                 }
             }
         }
-        for (List<String> ss : fullList) {
-            for (String s : ss) {
-                System.out.print(s + " ");
-            }
-            System.out.println();
-        }
+//        for (List<String> ss : fullList) {
+//            for (String s : ss) {
+//                System.out.print(s + " ");
+//            }
+//            System.out.println();
+//        }
         return fullList;
     }
 

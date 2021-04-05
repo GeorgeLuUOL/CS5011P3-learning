@@ -66,46 +66,17 @@ public class Main {
     }
 
     
-    public static void Analysis(String inputPathname) throws Exception {
-    	System.out.println("");
-    	System.out.println("----------------- Analyse ---------");
-    	
-    	Random random = new Random();
-        random.setSeed(0xC0FFEE);
-        FileSplit inputSplit = new FileSplit(new File(inputPathname));
-        
-        int nLinesToSkip = 1; // skip the first line (header)
-        CSVRecordReader recordReader = new CSVRecordReader(nLinesToSkip,',');
-        recordReader.initialize(inputSplit);
 
-        Schema schema = new Schema.Builder()
-                .addColumnsInteger("Row Number", "Customer Id")
-                .addColumnString("Surname")
-                .addColumnInteger("Credit Score")
-                .addColumnCategorical("Geography", "France", "Germany", "Spain")
-                .addColumnCategorical("Gender", "Female", "Male")
-                .addColumnsInteger("Age", "Tenure")
-                .addColumnDouble("Balance")
-                .addColumnInteger("Num Of Products")
-                .addColumnCategorical("Has Credit Card", "0", "1")
-                .addColumnCategorical("Is Active Member", "0", "1")
-                .addColumnDouble("Estimated Salary")
-                .addColumnCategorical("Exited", "0", "1")
-                .build();
-
-        DataAnalysis analysis = AnalyzeLocal.analyze(schema, recordReader);
-        HtmlAnalysis.createHtmlAnalysisFile(analysis, new File(inputPathname.replaceAll(".csv", "-analyse.html")));        
-    }
     
    
     
     public static void main(String[] args) throws Exception {
-//       Task1 task1=new Task1();
-//        task1.buildSchema();
-//        task1.setNetwork();
-//        task1.training();
-//        task1.evaluation();
-//        task1.predict();
+       Task1 task1=new Task1();
+        task1.buildSchema();
+        task1.setNetwork();
+        task1.training();
+        task1.evaluation();
+        task1.predict();
 
         Task2 task2=new Task2();
         task2.buildSchema();
@@ -113,5 +84,19 @@ public class Main {
         task2.training();
         task2.evaluation();
         task2.predict();
+//
+        Task3 task3=new Task3();
+        task3.buildSchema();
+        task3.setNetwork();
+        task3.training();
+        task3.evaluation();
+        task3.predict();
+
+        Task4 task4=new Task4();
+        task4.buildSchema();
+        task4.setNetwork();
+        task4.training();
+        task4.evaluation();
+        task4.predict();
     }
 }
