@@ -33,6 +33,26 @@ public class Task4 {
     TransformProcess transformProcess;
     int batchSize = 80;
     DataAnalysis analysis;
+    public void execute(String args[]) throws IOException, InterruptedException {
+        if(args[1].equals("train")){
+            System.out.println(args[1]);
+            buildSchema();
+            setNetwork();
+            training();
+        }
+        else if(args[1].equals("test")){
+            System.out.println(args[1]);
+            buildSchema();
+            setNetwork();
+            evaluation();
+        }
+        else if(args[1].equals("predict")){
+            System.out.println(args[1]);
+            buildSchema();
+            setNetwork();
+            predict();
+        }
+    }
     public void buildSchema() throws IOException, InterruptedException {
 
         schema = new Schema.Builder().addColumnsInteger("id", "amount_tsh")
@@ -103,7 +123,7 @@ public class Task4 {
     schema = tempSchema;
     cm.schema = schema;
 
-        System.out.println(schema.toString());
+       // System.out.println(schema.toString());
 
 
     TransformProcessRecordReader trainRecordReader =
@@ -118,7 +138,7 @@ public class Task4 {
             .classification(schema.getIndexOfColumn("status_group"), 2)
             .build();
 
-        System.out.println(schema.toString());
+        //System.out.println(schema.toString());
 }
 
     public void setNetwork() {
@@ -185,7 +205,7 @@ public class Task4 {
             if (count < list.size()) {
                 sb.append(cm.toStringInRow(list, count));
             }
-            sb.append(predicted.toStringFull());
+            sb.append(predicted.toDoubleMatrix()[0][0]<=0.5?"functions require repair":"other");
             sb.append("\n");
             //System.out.println(labels.toStringFull());
 
@@ -193,7 +213,7 @@ public class Task4 {
             count++;
         }
         System.out.println(sb.toString());
-        TextWriter.saveAsFileWriter(sb.toString());
+        TextWriter.saveAsFileWriter(sb.toString(),"result-task4.txt");
 
 
 // print accuracy

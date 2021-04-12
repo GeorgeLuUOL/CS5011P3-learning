@@ -6,7 +6,7 @@
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
-        <module name="CS5011P2EXAMPLE" />
+        <module name="CS5011P3" />
       </profile>
     </annotationProcessing>
   </component>

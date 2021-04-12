@@ -4,11 +4,11 @@ import java.io.IOException;
 public class TextWriter{
         public static String filePath = "testResult.txt";
 
-        public static void saveAsFileWriter(String content) {
+        public static void saveAsFileWriter(String content, String path) {
             FileWriter fwriter = null;
             try {
                 //do not over write
-                fwriter = new FileWriter(filePath);
+                fwriter = new FileWriter(path);
                 fwriter.write(content);
             } catch (IOException ex) {
                 ex.printStackTrace();

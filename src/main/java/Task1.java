@@ -41,6 +41,26 @@ public class Task1 {
     int batchSize = 80;
     DataAnalysis analysis;
 
+    public void execute(String args[]) throws IOException, InterruptedException {
+        if(args[1].equals("train")){
+            System.out.println(args[1]);
+            buildSchema();
+            setNetwork();
+            training(args[2],args[3]);
+        }
+        else if(args[1].equals("test")){
+            System.out.println(args[1]);
+            buildSchema();
+            setNetwork();
+            evaluation(args[2],args[3],args[4]);
+        }
+        else if(args[1].equals("predict")){
+            System.out.println(args[1]);
+            buildSchema();
+            setNetwork();
+            predict(args[2],args[3]);
+        }
+    }
     public void buildSchema() throws IOException, InterruptedException {
 
         schema = new Schema.Builder().addColumnsInteger("id", "amount_tsh", "gps_height")
@@ -56,25 +76,7 @@ public class Task1 {
                 .build();
         Schema finalSchema = transformProcess.getFinalSchema();
         schema = finalSchema;
-        FileSplit inputSplit = new FileSplit(new File("task1_train.csv"));
-        int nLinesToSkip = 1; // skip the first line (header)
-        TransformProcessRecordReader trainRecordReader =
-                new TransformProcessRecordReader(
-                        new CSVRecordReader(nLinesToSkip, ','), transformProcess);
-        trainRecordReader.initialize(inputSplit);
 
-        batchSize = 80;
-        trainIterator =
-                new RecordReaderDataSetIterator.Builder(trainRecordReader, batchSize)
-                        // mark status_group as the output column (with 2 output classes)
-                        .classification(schema.getIndexOfColumn("status_group"), 2)
-                        .build();
-        //ini analysis obj
-        TransformProcessRecordReader recordReader = new TransformProcessRecordReader(
-                new CSVRecordReader(nLinesToSkip, ','), transformProcess);
-        trainRecordReader.initialize(inputSplit);
-        recordReader.initialize(inputSplit);
-        analysis = AnalyzeLocal.analyze(schema, recordReader);
 //        while (trainIterator.hasNext()) {
 //            DataSet t = trainIterator.next();
 //            System.out.println(t.toString());}
@@ -99,11 +101,30 @@ public class Task1 {
 
     }
 
-    public void training() throws IOException {
+    public void training(String file,String nn) throws IOException, InterruptedException {
+        FileSplit inputSplit = new FileSplit(new File(file));
+        int nLinesToSkip = 1; // skip the first line (header)
+        TransformProcessRecordReader trainRecordReader =
+                new TransformProcessRecordReader(
+                        new CSVRecordReader(nLinesToSkip, ','), transformProcess);
+        trainRecordReader.initialize(inputSplit);
+
+        batchSize = 80;
+        trainIterator =
+                new RecordReaderDataSetIterator.Builder(trainRecordReader, batchSize)
+                        // mark status_group as the output column (with 2 output classes)
+                        .classification(schema.getIndexOfColumn("status_group"), 2)
+                        .build();
+        //ini analysis obj
+        TransformProcessRecordReader recordReader = new TransformProcessRecordReader(
+                new CSVRecordReader(nLinesToSkip, ','), transformProcess);
+        trainRecordReader.initialize(inputSplit);
+        recordReader.initialize(inputSplit);
+        analysis = AnalyzeLocal.analyze(schema, recordReader);
         int nEpochs = 100;
         model.fit(trainIterator, nEpochs);
 
-        File modelSave = new File("task1_train-model.bin");
+        File modelSave = new File(nn+".bin");
         model.save(modelSave);
         ModelSerializer.addObjectToFile(modelSave, "dataanalysis", analysis.toJson());
         ModelSerializer.addObjectToFile(modelSave, "schema", schema.toJson());
@@ -111,22 +132,22 @@ public class Task1 {
 
     }
 
-    public void evaluation() throws IOException, InterruptedException {
+    public void evaluation(String file,String nn,String path) throws IOException, InterruptedException {
         int nLinesToSkip = 1; // skip the first line (header)
         TransformProcessRecordReader testRecordReader =
                 new TransformProcessRecordReader(
                         new CSVRecordReader(nLinesToSkip, ','), transformProcess);
-        testRecordReader.initialize(new FileSplit(new File("task1_test.csv")));
+        testRecordReader.initialize(new FileSplit(new File(file)));
         RecordReaderDataSetIterator testIterator =
                 new RecordReaderDataSetIterator.Builder(testRecordReader, 1)
                         .classification(schema.getIndexOfColumn("status_group"), 2)
                         .build();
 
         Evaluation eval = new Evaluation(2);
-        File modelSave = new File("task1_train-model.bin");
+        File modelSave = new File(nn+".bin");
 
         MultiLayerNetwork model = ModelSerializer.restoreMultiLayerNetwork(modelSave);
-        FileSplit inputSplit = new FileSplit(new File("task1_test.csv"));
+        FileSplit inputSplit = new FileSplit(new File(file));
 
         CategoryMaker cm = new CategoryMaker(schema);
         int count = 0;
@@ -145,7 +166,7 @@ public class Task1 {
             if (count < list.size()) {
                 sb.append(cm.toStringInRow(list, count));
             }
-            sb.append(predicted.toStringFull());
+            sb.append(predicted.toDoubleMatrix()[0][0]<=0.5?"functions require repair":"other");
             sb.append("\n");
             //System.out.println(labels.toStringFull());
 
@@ -153,13 +174,13 @@ public class Task1 {
             count++;
         }
         System.out.println(sb.toString());
-        TextWriter.saveAsFileWriter(sb.toString());
-
+        TextWriter.saveAsFileWriter(sb.toString(),path);
+        System.out.println(eval.stats());
 
 
     }
 
-    public void predict() throws IOException, InterruptedException {
+    public void predict(String file,String nn) throws IOException, InterruptedException {
         int nLinesToSkip = 1; // skip the first line (header)
         Schema newschema = new Schema.Builder().addColumnsInteger("id", "amount_tsh", "gps_height")
                 .addColumnsDouble("longitude", "latitude")
@@ -167,7 +188,7 @@ public class Task1 {
                 .build();
 
 
-        File modelSave = new File("task1_train-model.bin");
+        File modelSave = new File(nn+".bin");
         DataAnalysis analysis =
                 DataAnalysis.fromJson(ModelSerializer.getObjectFromFile(
                         modelSave, "dataanalysis"));
@@ -182,7 +203,7 @@ public class Task1 {
         Schema finalSchema = transformProcess.getFinalSchema();
 
 
-        FileSplit inputSplit = new FileSplit(new File("task1_test_nolabels.csv"));
+        FileSplit inputSplit = new FileSplit(new File(file));
         CSVRecordReader raw = new CSVRecordReader(nLinesToSkip);
         raw.initialize(inputSplit);
         RecordReaderDataSetIterator rawIterator =
